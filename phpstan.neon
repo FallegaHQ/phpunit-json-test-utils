@@ -1,0 +1,18 @@
+parameters:
+    level: 8
+    paths:
+        - src
+        - tests
+    parallel:
+        maximumNumberOfProcesses: 4
+        minimumNumberOfJobsPerProcess: 8
+    ignoreErrors:
+        - message: '#Method .*::.*\(\) has parameter \$.* with no value type specified in iterable type array.#'
+        - message: '#Method [a-zA-Z0-9\_:\(\)]+ has parameter \$[a-zA-Z0-9_]+ with no value type specified in iterable type array#'
+        - message: '#Method [a-zA-Z0-9_:\(\)]+ return type has no value type specified in iterable type array#'
+        - message: '#Property [a-zA-Z0-9\$\_:\\(\\)]+ type has no value type specified in iterable type array#'
+        - message: '#Construct empty\(\) is not allowed. Use more strict comparison#'
+
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-strict-rules/rules.neon

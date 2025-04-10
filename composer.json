@@ -1,0 +1,37 @@
+{
+    "name"             : "fallegahq/phpunit-json-test-utils",
+    "description"      : "JSON testing utilities for PHPUnit",
+    "type"             : "library",
+    "version"          : "0.0.1",
+    "require"          : {
+        "php"            : "^8.2",
+        "phpunit/phpunit": "^11"
+    },
+    "require-dev"      : {
+        "phpstan/phpstan": "^2.1.11",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.0"
+    },
+    "license"          : "MIT",
+    "autoload"         : {
+        "psr-4": {
+            "FallegaHQ\\PhpunitJsonTestUtils\\": "src/"
+        }
+    },
+    "autoload-dev"     : {
+        "psr-4": {
+            "FallegaHQ\\PhpunitJsonTestUtils\\Tests\\": "tests/"
+        }
+    },
+    "authors"          : [
+        {
+            "name" : "SAKHRAOUI Omar",
+            "email": "xana@xana.tn"
+        }
+    ],
+    "minimum-stability": "stable",
+    "scripts"          : {
+        "test"   : "vendor/bin/phpunit",
+        "analyze": "vendor/bin/phpstan analyse"
+    }
+}
