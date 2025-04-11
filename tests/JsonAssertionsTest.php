@@ -1,24 +1,24 @@
 <?php
-declare(strict_types=1);
 
-namespace FallegaHQ\PhpunitJsonTestUtils\Tests;
+/**
+ * Made with love.
+ */
 
-use FallegaHQ\PhpunitJsonTestUtils\JsonAssertions;
-use FallegaHQ\PhpunitJsonTestUtils\JsonValidator;
-use FallegaHQ\PhpunitJsonTestUtils\JsonValidatorAssertion;
+declare(strict_types = 1);
+namespace FallegaHQ\JsonTestUtils\Tests;
+
+use FallegaHQ\JsonTestUtils\JsonAssertions;
+use FallegaHQ\JsonTestUtils\JsonValidator;
+use FallegaHQ\JsonTestUtils\JsonValidatorAssertion;
 use JsonException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- *
- */
 #[CoversClass(JsonAssertions::class)]
 #[CoversClass(JsonValidator::class)]
 #[CoversClass(JsonValidatorAssertion::class)]
-class JsonAssertionsTest extends TestCase{
+class JsonAssertionsTest extends TestCase {
     use JsonAssertions;
-
     private array $testData = [
         'id'         => 123,
         'name'       => 'Test User',
@@ -37,43 +37,50 @@ class JsonAssertionsTest extends TestCase{
         'created_at' => '2023-01-01',
         'updated_at' => null,
     ];
-
     private string $testJson;
 
-    public function testAssertJsonHasKey(): void{
+    /**
+     * @throws JsonException
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->testJson = json_encode($this->testData, flags: JSON_THROW_ON_ERROR);
+    }
+
+    public function testAssertJsonHasKey(): void {
         $this->assertJsonHasKey($this->testData, 'name');
         $this->assertJsonHasKey($this->testData, 'profile.city');
         $this->assertJsonHasKey($this->testJson, 'tags');
 
         $this->assertValidJson($this->testData)
-             ->hasKey('name')
-             ->hasKey('profile.city')
-             ->assert();
+            ->hasKey('name')
+            ->hasKey('profile.city')
+            ->assert();
     }
 
-    public function testAssertJsonNotHasKey(): void{
+    public function testAssertJsonNotHasKey(): void {
         $this->assertJsonNotHasKey($this->testData, 'foo');
         $this->assertJsonNotHasKey($this->testData, 'profile.country');
 
         $this->assertValidJson($this->testData)
-             ->notHasKey('foo')
-             ->notHasKey('profile.country')
-             ->assert();
+            ->notHasKey('foo')
+            ->notHasKey('profile.country')
+            ->assert();
     }
 
-    public function testAssertJsonEquals(): void{
+    public function testAssertJsonEquals(): void {
         $this->assertJsonEquals($this->testData, 'id', 123);
         $this->assertJsonEquals($this->testData, 'name', 'Test User');
         $this->assertJsonEquals($this->testData, 'profile.city', 'Test City');
 
         $this->assertValidJson($this->testData)
-             ->equals('id', 123)
-             ->equals('name', 'Test User')
-             ->equals('profile.city', 'Test City')
-             ->assert();
+            ->equals('id', 123)
+            ->equals('name', 'Test User')
+            ->equals('profile.city', 'Test City')
+            ->assert();
     }
 
-    public function testAssertJsonType(): void{
+    public function testAssertJsonType(): void {
         $this->assertJsonType($this->testData, 'id', 'int');
         $this->assertJsonType($this->testData, 'name', 'string');
         $this->assertJsonType($this->testData, 'active', 'bool');
@@ -82,53 +89,51 @@ class JsonAssertionsTest extends TestCase{
         $this->assertJsonType($this->testData, 'updated_at', 'null');
 
         $this->assertValidJson($this->testData)
-             ->isType('id', 'int')
-             ->isType('name', 'string')
-             ->isType('active', 'bool')
-             ->isType('tags', 'array')
-             ->assert();
+            ->isType('id', 'int')
+            ->isType('name', 'string')
+            ->isType('active', 'bool')
+            ->isType('tags', 'array')
+            ->assert();
     }
 
-    public function testAssertJsonCondition(): void{
-        $this->assertJsonCondition($this->testData, 'id', function($value){
+    public function testAssertJsonCondition(): void {
+        $this->assertJsonCondition($this->testData, 'id', function ($value) {
             return $value > 100;
         });
 
         $this->assertValidJson($this->testData)
-             ->passes('id', function($value){
-                 return $value > 100;
-             },       'ID must be greater than 100')
-             ->assert();
+            ->passes('id', function ($value) {
+                return $value > 100;
+            }, 'ID must be greater than 100')
+            ->assert();
     }
 
-    public function testFluentInterfaceWithMultipleAssertions(): void{
+    public function testFluentInterfaceWithMultipleAssertions(): void {
         $this->assertValidJson($this->testData)
-             ->hasKey('id')
-             ->isType('id', 'int')
-             ->equals('id', 123)
-             ->hasKey('profile')
-             ->isType('profile', 'array')
-             ->hasKey('profile.website')
-             ->isUrl('profile.website')
-             ->hasKeys(
-                 [
-                     'name',
-                     'email',
-                     'active',
-                 ],
-             )
-             ->notHasKey('non_existent_key')
-             ->isEmail('email')
-             ->notEmpty('tags')
-             ->hasLength('tags', 3)
-             ->assert();
+            ->hasKey('id')
+            ->isType('id', 'int')
+            ->equals('id', 123)
+            ->hasKey('profile')
+            ->isType('profile', 'array')
+            ->hasKey('profile.website')
+            ->isUrl('profile.website')
+            ->hasKeys([
+                'name',
+                'email',
+                'active',
+            ], )
+            ->notHasKey('non_existent_key')
+            ->isEmail('email')
+            ->notEmpty('tags')
+            ->hasLength('tags', 3)
+            ->assert();
     }
 
-    public function testJsonSchemaValidation(): void{
+    public function testJsonSchemaValidation(): void {
         $schema = [
             'id'         => 'integer',
             'name'       => 'string',
-            'email'      => function($validator, $key){
+            'email'      => function ($validator, $key) {
                 $validator->whereEmail($key);
             },
             'active'     => 'boolean',
@@ -139,7 +144,7 @@ class JsonAssertionsTest extends TestCase{
             'profile'    => [
                 'age'     => 'integer',
                 'city'    => 'string',
-                'website' => function($validator, $key){
+                'website' => function ($validator, $key) {
                     $validator->whereUrl($key);
                 },
             ],
@@ -151,35 +156,24 @@ class JsonAssertionsTest extends TestCase{
         ];
 
         $this->assertValidJson($this->testData)
-             ->matchesSchema($schema)
-             ->assert();
+            ->matchesSchema($schema)
+            ->assert();
     }
 
-    public function testJsonContainsValues(): void{
+    public function testJsonContainsValues(): void {
         $this->assertValidJson($this->testData)
-             ->in(
-                 'tags.0',
-                 [
-                     'php',
-                     'javascript',
-                     'python',
-                 ],
-             )
-             ->assert();
+            ->in('tags.0', [
+                'php',
+                'javascript',
+                'python',
+            ], )
+            ->assert();
     }
 
-    public function testJsonRegexMatches(): void{
+    public function testJsonRegexMatches(): void {
         $this->assertValidJson($this->testData)
-             ->matches('email', '/^.+@.+\..+$/')
-             ->matches('created_at', '/^\d{4}-\d{2}-\d{2}$/')
-             ->assert();
-    }
-
-    /**
-     * @throws JsonException
-     */
-    protected function setUp(): void{
-        parent::setUp();
-        $this->testJson = json_encode($this->testData, flags: JSON_THROW_ON_ERROR);
+            ->matches('email', '/^.+@.+\..+$/')
+            ->matches('created_at', '/^\d{4}-\d{2}-\d{2}$/')
+            ->assert();
     }
 }

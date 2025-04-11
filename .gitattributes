@@ -1,0 +1,14 @@
+# Auto detect text files and perform LF normalization
+*         text=auto
+
+# PHP files
+*.php     text eol=lf diff=php
+*.phpt    text eol=lf diff=php
+*.phtml   text eol=lf diff=html
+*.module  text eol=lf
+*.phar    binary
+
+# Configuration files
+ecs.php    text eol=lf
+phpunit.xml  text eol=lf
+phpstan.neon text eol=lf

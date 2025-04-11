@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  verify_and_tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Read version and Changelogs from files
+        run: |
+          VERSION=$(cat VERSION || true)
+          if [[ -z "$VERSION" ]]; then
+            echo "Error: VERSION file not found!"
+            exit 1
+          fi
+          CHANGELOG=$(cat CHANGELOG.md || true)
+          if [[ -z "$CHANGELOG" ]]; then
+            echo "Error: CHANGELOG.md file not found!"
+            exit 1
+          fi
+          echo "Tag name: $VERSION"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Change log: $CHANGELOG"          
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo $CHANGELOG >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Check if commit message indicates merge
+        run: |
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+            if git show -s --format=%B "$GITHUB_SHA" | grep -q "Merge pull request"; then
+              echo "Detected a successful merge request."
+            else
+              echo "Detected an unsuccessful merge request."
+              exit 1  
+            fi
+          else
+            echo "Did not detected a merge request."
+            exit 1  
+          fi
+
+      - name: Exclude useless files from release
+        run: |
+          git update-index --skip-worktree VERSION
+          git update-index --skip-worktree .github/
+          git update-index --skip-worktree examples/
+          echo "Ignored useless files for the release"
+
+
+      - name: Validate composer.json and composer.lock
+        run: |
+          composer validate --strict
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
+      - name: Install dependencies
+        run: |
+          composer install --prefer-dist --no-progress || exit 1
+
+      - name: Create tag
+        if: success()
+        run: |
+          git config --global user.name "Omar SAKHRAOUI"
+          git config --global user.email "omediadon@gmail.com"
+          git tag -a "$VERSION" -m "Version $VERSION"
+          git push origin --tags
+
+      - name: Create Release
+        if: success()
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
+          body: |
+            ${{ env.CHANGELOG }}
+          draft: false
+          prerelease: false
