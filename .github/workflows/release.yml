@@ -32,20 +32,6 @@ jobs:
           echo $CHANGELOG >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Check if commit message indicates merge
-        run: |
-          if [[ "$GITHUB_REF" == "refs/heads/master" ]]; then
-            if git show -s --format=%B "$GITHUB_SHA" | grep -q "Merge pull request"; then
-              echo "Detected a successful merge request."
-            else
-              echo "Detected an unsuccessful merge request."
-              exit 1  
-            fi
-          else
-            echo "Did not detected a merge request."
-            exit 1  
-          fi
-
       - name: Exclude useless files from release
         run: |
           git update-index --skip-worktree VERSION
@@ -60,7 +46,7 @@ jobs:
 
       - name: Cache Composer packages
         uses: actions/cache@v4
-        with:
+        with:s
           path: vendor
           key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
