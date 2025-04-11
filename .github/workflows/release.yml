@@ -34,7 +34,7 @@ jobs:
 
       - name: Check if commit message indicates merge
         run: |
-          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+          if [[ "$GITHUB_REF" == "refs/heads/master" ]]; then
             if git show -s --format=%B "$GITHUB_SHA" | grep -q "Merge pull request"; then
               echo "Detected a successful merge request."
             else
