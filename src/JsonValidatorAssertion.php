@@ -1,6 +1,9 @@
 <?php
 
-namespace FallegaHQ\PhpunitJsonTestUtils;
+/**
+ * Made with love.
+ */
+namespace FallegaHQ\JsonTestUtils;
 
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\AssertionFailedError;
@@ -8,15 +11,13 @@ use PHPUnit\Framework\AssertionFailedError;
 /**
  * Helper class for building fluent JSON assertions
  */
-class JsonValidatorAssertion{
+class JsonValidatorAssertion {
     private JsonValidator $validator;
 
     /**
-     * Constructor
-     *
      * @param array|string $json The JSON data to validate
      */
-    public function __construct(array|string $json){
+    public function __construct(array|string $json) {
         $this->validator = new JsonValidator($json);
     }
 
@@ -27,7 +28,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function hasKey(string $key): self{
+    public function hasKey(string $key): self {
         $this->validator->has($key);
 
         return $this;
@@ -40,7 +41,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function hasKeys(array $keys): self{
+    public function hasKeys(array $keys): self {
         $this->validator->hasAll($keys);
 
         return $this;
@@ -53,7 +54,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function notHasKey(string $key): self{
+    public function notHasKey(string $key): self {
         $this->validator->hasNot($key);
 
         return $this;
@@ -66,7 +67,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function hasAnyKey(string ...$keys): self{
+    public function hasAnyKey(string ...$keys): self {
         $this->validator->hasAnyOf(...$keys);
 
         return $this;
@@ -80,7 +81,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function equals(string $key, mixed $value): self{
+    public function equals(string $key, mixed $value): self {
         $this->validator->where($key, $value);
 
         return $this;
@@ -94,7 +95,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function isType(string $key, string $type): self{
+    public function isType(string $key, string $type): self {
         $this->validator->whereType($key, $type);
 
         return $this;
@@ -108,7 +109,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function in(string $key, array|string $allowedValues): self{
+    public function in(string $key, array|string $allowedValues): self {
         $this->validator->whereIn($key, $allowedValues);
 
         return $this;
@@ -122,7 +123,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function matches(string $key, string $pattern): self{
+    public function matches(string $key, string $pattern): self {
         $this->validator->whereRegexMatch($key, $pattern);
 
         return $this;
@@ -135,7 +136,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function isEmail(string $key): self{
+    public function isEmail(string $key): self {
         $this->validator->whereEmail($key);
 
         return $this;
@@ -148,7 +149,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function isUrl(string $key): self{
+    public function isUrl(string $key): self {
         $this->validator->whereUrl($key);
 
         return $this;
@@ -161,7 +162,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function notEmpty(string $key): self{
+    public function notEmpty(string $key): self {
         $this->validator->whereNotEmpty($key);
 
         return $this;
@@ -177,7 +178,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function hasLength(string $key, ?int $exact = null, ?int $min = null, ?int $max = null): self{
+    public function hasLength(string $key, ?int $exact = null, ?int $min = null, ?int $max = null): self {
         $this->validator->whereLength($key, $exact, $min, $max);
 
         return $this;
@@ -190,7 +191,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function matchesSchema(array $schema): self{
+    public function matchesSchema(array $schema): self {
         $this->validator->whereSchema('', $schema);
 
         return $this;
@@ -203,11 +204,11 @@ class JsonValidatorAssertion{
      *
      * @throws AssertionFailedError if validation fails
      */
-    public function assert(?string $message = null): void{
+    public function assert(?string $message = null): void {
         $validationPassed = $this->validator->passes();
         $errors           = $this->validator->errors();
 
-        $errorMsg = $message ?? $this->formatErrors($errors);
+        $errorMsg         = $message ?? $this->formatErrors($errors);
 
         Assert::assertTrue($validationPassed, $errorMsg);
     }
@@ -221,7 +222,7 @@ class JsonValidatorAssertion{
      *
      * @return $this For method chaining
      */
-    public function passes(string $key, callable $callback, ?string $message = null): self{
+    public function passes(string $key, callable $callback, ?string $message = null): self {
         $this->validator->whereIs($key, $callback, $message);
 
         return $this;
@@ -234,18 +235,18 @@ class JsonValidatorAssertion{
      *
      * @return string Formatted error message
      */
-    private function formatErrors(array $errors): string{
-        if(empty($errors)){
+    private function formatErrors(array $errors): string {
+        if (empty($errors)) {
             return 'Unknown validation error';
         }
 
         $formattedErrors = [];
-        foreach($errors as $messages){
-            foreach($messages as $message){
-                $formattedErrors[] = "$message";
+        foreach ($errors as $messages) {
+            foreach ($messages as $message) {
+                $formattedErrors[] = "{$message}";
             }
         }
 
-        return "JSON validation failed:\n" . implode(PHP_EOL, $formattedErrors);
+        return "JSON validation failed:\n".implode(PHP_EOL, $formattedErrors);
     }
 }
