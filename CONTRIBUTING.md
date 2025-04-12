@@ -39,7 +39,8 @@ Enhancement suggestions are always welcome! Include:
 3. **Write tests** to verify your changes
 4. **Update documentation** if necessary
 5. **Ensure code style compliance** with PSR-12
-6. **Submit a pull request** targeting the `main` branch
+6. **Prepare the files** by running `composer prepare`
+7. **Submit a pull request** targeting the `main` branch
 
 ## Development Workflow
 
@@ -62,8 +63,9 @@ Before submitting a PR, make sure all tests pass:
 # Run the test suite
 composer test
 
-# Run code style checks
-composer check-style
+# Run code style checks and fixes
+composer check
+composer prepare
 ```
 
 ### Coding Standards
@@ -71,13 +73,13 @@ composer check-style
 This project follows PSR-12 coding standards. You can check your code with:
 
 ```bash
-composer check-style
+composer check
 ```
 
 And automatically fix many issues with:
 
 ```bash
-composer fix-style
+composer prepare
 ```
 
 ## Pull Request Guidelines
@@ -86,7 +88,7 @@ composer fix-style
 - Follow the project's code style
 - Include tests for new features or bug fixes
 - Update documentation as necessary
-- Keep a clean commit history - use rebase if necessary
+- Keep a clean commit history - use rebase
 - Reference issues in commit messages and PR descriptions
 
 ## Documentation
@@ -97,6 +99,7 @@ Good documentation is essential. When adding new features, please:
 - Add PHPDoc blocks to all public methods
 - Include examples of how to use the new feature
 - Update any relevant documentation files
+- Feel free to add your name to CONTRIBUTORS.md
 
 ## Release Process
 
