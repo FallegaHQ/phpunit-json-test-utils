@@ -355,7 +355,7 @@ The MIT License (MIT). Please see [License File](LICENSE) for more information.
 <!-- MARKDOWN LINKS & IMAGES -->
 [composer-version]: https://img.shields.io/packagist/v/fallegahq/json-test-utils.svg?style=for-the-badge
 [composer-shield]: https://img.shields.io/packagist/dt/fallegahq/json-test-utils.svg?style=for-the-badge
-[build-shield]: https://img.shields.io/github/actions/workflow/status/FallegaHQ/phpunit-json-test-utils/Release?style=for-the-badge
+[build-shield]: https://img.shields.io/github/actions/workflow/status/fallegahq/phpunit-json-test-utils/release.yml?style=for-the-badge
 [build-url]: https://github.com/fallegahq/phpunit-json-test-utils/actions/workflows/release.yml
 [composer-url]: https://packagist.org/packages/fallegahq/json-test-utils
 [contributors-shield]: https://img.shields.io/github/contributors/FallegaHQ/phpunit-json-test-utils.svg?style=for-the-badge
