@@ -82,7 +82,7 @@ class JsonValidatorAssertion {
      * @return $this For method chaining
      */
     public function equals(string $key, mixed $value): self {
-        $this->validator->where($key, $value);
+        $this->validator->hasWithValue($key, $value);
 
         return $this;
     }
@@ -96,7 +96,7 @@ class JsonValidatorAssertion {
      * @return $this For method chaining
      */
     public function isType(string $key, string $type): self {
-        $this->validator->whereType($key, $type);
+        $this->validator->isType($key, $type);
 
         return $this;
     }
@@ -110,7 +110,7 @@ class JsonValidatorAssertion {
      * @return $this For method chaining
      */
     public function in(string $key, array|string $allowedValues): self {
-        $this->validator->whereIn($key, $allowedValues);
+        $this->validator->isIn($key, $allowedValues);
 
         return $this;
     }
@@ -124,7 +124,7 @@ class JsonValidatorAssertion {
      * @return $this For method chaining
      */
     public function matches(string $key, string $pattern): self {
-        $this->validator->whereRegexMatch($key, $pattern);
+        $this->validator->matchesRegex($key, $pattern);
 
         return $this;
     }
@@ -137,7 +137,7 @@ class JsonValidatorAssertion {
      * @return $this For method chaining
      */
     public function isEmail(string $key): self {
-        $this->validator->whereEmail($key);
+        $this->validator->isEmail($key);
 
         return $this;
     }
@@ -150,7 +150,7 @@ class JsonValidatorAssertion {
      * @return $this For method chaining
      */
     public function isUrl(string $key): self {
-        $this->validator->whereUrl($key);
+        $this->validator->isURL($key);
 
         return $this;
     }
@@ -163,7 +163,7 @@ class JsonValidatorAssertion {
      * @return $this For method chaining
      */
     public function notEmpty(string $key): self {
-        $this->validator->whereNotEmpty($key);
+        $this->validator->isNotEmpty($key);
 
         return $this;
     }
@@ -179,7 +179,7 @@ class JsonValidatorAssertion {
      * @return $this For method chaining
      */
     public function hasLength(string $key, ?int $exact = null, ?int $min = null, ?int $max = null): self {
-        $this->validator->whereLength($key, $exact, $min, $max);
+        $this->validator->hasLength($key, $exact, $min, $max);
 
         return $this;
     }
@@ -192,7 +192,7 @@ class JsonValidatorAssertion {
      * @return $this For method chaining
      */
     public function matchesSchema(array $schema): self {
-        $this->validator->whereSchema('', $schema);
+        $this->validator->passesSchema('', $schema);
 
         return $this;
     }
@@ -205,8 +205,8 @@ class JsonValidatorAssertion {
      * @throws AssertionFailedError if validation fails
      */
     public function assert(?string $message = null): void {
-        $validationPassed = $this->validator->passes();
-        $errors           = $this->validator->errors();
+        $validationPassed = $this->validator->validated();
+        $errors           = $this->validator->getErrors();
 
         $errorMsg         = $message ?? $this->formatErrors($errors);
 
@@ -223,7 +223,7 @@ class JsonValidatorAssertion {
      * @return $this For method chaining
      */
     public function passes(string $key, callable $callback, ?string $message = null): self {
-        $this->validator->whereIs($key, $callback, $message);
+        $this->validator->passes($key, $callback, $message);
 
         return $this;
     }

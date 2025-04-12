@@ -258,14 +258,14 @@ use FallegaHQ\JsonTestUtils\JsonValidator;
 
 $validator = new JsonValidator($json);
 $validator->has('data')
-    ->whereType('data', 'array')
-    ->whereNotEmpty('data')
-    ->whereEach('data.items', function($item) {
+    ->isType('data', 'array')
+    ->isNotEmpty('data')
+    ->passesEach('data.items', function($item) {
         return isset($item['id']) ? true : 'Item must have an ID';
     });
 
-if ($validator->fails()) {
-    var_dump($validator->errors());
+if ($validator->failed()) {
+    var_dump($validator->getErrors());
 }
 ```
 

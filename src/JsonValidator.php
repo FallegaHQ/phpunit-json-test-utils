@@ -40,32 +40,15 @@ class JsonValidator {
     }
 
     /**
-     * Validate that a key matches a custom condition
-     *
-     * @param string      $key      The key to check (dot notation supported)
-     * @param callable    $callback Function that returns true if valid
-     * @param string|null $message  Optional custom error message
-     *
-     * @return $this
-     */
-    public function whereIs(string $key, callable $callback, ?string $message = null): static {
-        if (! $this->hasKey($key) || ! $callback($this->getValue($key))) {
-            $this->addError($key, $message ?? "The '{$key}' doesn't match the required condition");
-        }
-
-        return $this;
-    }
-
-    /**
      * Validate that multiple keys are of specific types
      *
      * @param array $typeMap Key-type pairs
      *
      * @return $this
      */
-    public function whereAllTypes(array $typeMap): static {
+    public function hasTypedItems(array $typeMap): static {
         foreach ($typeMap as $key => $type) {
-            $this->whereType($key, $type);
+            $this->isType($key, $type);
         }
 
         return $this;
@@ -79,7 +62,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereType(string $key, string $type): static {
+    public function isType(string $key, string $type): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -109,17 +92,18 @@ class JsonValidator {
     /**
      * Validate that a key exists, but is optional
      *
-     * @param string $key The key to check (dot notation supported)
+     * @param string $key   The key to check (dot notation supported)
+     * @param mixed  $value Value to validate against, if the key is present
      *
      * @return $this
      */
-    public function whereOptional(string $key, mixed $value): static {
+    public function optional(string $key, mixed $value): static {
         if (! $this->hasKey($key)) {
             return $this;
         }
 
         // Check the value
-        return $this->where($key, $value);
+        return $this->hasWithValue($key, $value);
     }
 
     /**
@@ -130,11 +114,11 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function where(string $key, mixed $value): static {
+    public function hasWithValue(string $key, mixed $value): static {
         /**
          * @phpstan-ignore-next-line
          */
-        if (! $this->hasKey($key) || $this->getValue($key) != $value) {
+        if (! $this->hasKey($key) || $value != $this->getValue($key)) {
             $this->addError($key, "The '{$key}' must be exactly: ".$this->valueToString($value));
         }
 
@@ -149,13 +133,13 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereOptionalType(string $key, string $type): static {
+    public function optionalWithType(string $key, string $type): static {
         if (! $this->hasKey($key)) {
             return $this;
         }
 
         // Check the type
-        return $this->whereType($key, $type);
+        return $this->isType($key, $type);
     }
 
     /**
@@ -195,7 +179,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function hasNone(array $keys): static {
+    public function hasNoneOf(array $keys): static {
         foreach ($keys as $key) {
             $this->hasNot($key);
         }
@@ -211,17 +195,6 @@ class JsonValidator {
      * @return $this
      */
     public function hasNot(string $key): static {
-        return $this->whereNot($key);
-    }
-
-    /**
-     * Validate that a key doesn't exist
-     *
-     * @param string $key The key that should not exist (dot notation supported)
-     *
-     * @return $this
-     */
-    public function whereNot(string $key): static {
         if ($this->hasKey($key)) {
             $this->addError($key, "The '{$key}' must not be present");
         }
@@ -261,7 +234,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereIsFile(string $key, bool $mustExist = true): static {
+    public function isFile(string $key, bool $mustExist = true): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -291,7 +264,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereDate(string $key, string $format = 'Y-m-d'): static {
+    public function isDate(string $key, string $format = 'Y-m-d'): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -322,37 +295,24 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereEmail(string $key): static {
-        return $this->whereIsValid($key, function ($value) use ($key) {
-            if (! is_string($value)) {
-                return $key.' must be a string';
-            }
-
-            return false !== filter_var($value, FILTER_VALIDATE_EMAIL) ? true : $key.' must be a valid email address';
-        }, );
+    public function isEmail(string $key): static {
+        return $this->passes($key, function ($value) {
+            return is_string($value) && false !== filter_var($value, FILTER_VALIDATE_EMAIL);
+        }, $key.' must be a valid email address');
     }
 
     /**
-     * Validate that a key passes custom validation
+     * Validate that a key matches a custom condition
      *
-     * @param string   $key       The key to validate (dot notation supported)
-     * @param callable $validator Function returning true if valid, or an error string if invalid
+     * @param string      $key     The key to check (dot notation supported)
+     * @param callable    $check   Function that returns true if valid
+     * @param string|null $message Optional custom error message
      *
      * @return $this
      */
-    public function whereIsValid(string $key, callable $validator): static {
-        if (! $this->hasKey($key)) {
-            $this->addError($key, "The '{$key}' is required");
-
-            return $this;
-        }
-
-        $value  = $this->getValue($key);
-        $result = $validator($value);
-
-        if (true !== $result) {
-            $message = is_string($result) ? $result : "The '{$key}' failed validation";
-            $this->addError($key, $message);
+    public function passes(string $key, callable $check, ?string $message = null): static {
+        if (! $this->hasKey($key) || ! $check($this->getValue($key))) {
+            $this->addError($key, $message ?? "The '{$key}' doesn't match the required condition");
         }
 
         return $this;
@@ -365,14 +325,10 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereUrl(string $key): static {
-        return $this->whereIsValid($key, function ($value) use ($key) {
-            if (! is_string($value)) {
-                return $key.' must be a string';
-            }
-
-            return false !== filter_var($value, FILTER_VALIDATE_URL) ? true : $key.' must be a valid URL';
-        }, );
+    public function isURL(string $key): static {
+        return $this->passes($key, function ($value) {
+            return is_string($value) && false !== filter_var($value, FILTER_VALIDATE_URL);
+        }, $key.' must be a valid URL');
     }
 
     /**
@@ -383,7 +339,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereIp(string $key, ?int $flags = null): static {
+    public function isIP(string $key, ?int $flags = null): static {
 
         if (! in_array($flags, [
             null,
@@ -395,16 +351,13 @@ class JsonValidator {
             return $this;
         }
 
-        return $this->whereIsValid($key, function ($value) use ($flags, $key) {
-            if (! is_string($value)) {
-                return $key.' must be a string';
-            }
-            $options = null !== $flags ? [
+        return $this->passes($key, function ($value) use ($flags) {
+            $options = null                   !== $flags ? [
                 'flags' => $flags,
             ] : [];
 
-            return false    !== filter_var($value, FILTER_VALIDATE_IP, $options) ? true : $key.' must be a valid IP address';
-        }, );
+            return is_string($value) && false !== filter_var($value, FILTER_VALIDATE_IP, $options);
+        }, $key.' must be a valid IP address');
     }
 
     /**
@@ -416,7 +369,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereContains(string $key, string $needle, bool $caseSensitive = true): static {
+    public function contains(string $key, string $needle, bool $caseSensitive = true): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -448,7 +401,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereContainsType(string $key, string $type): static {
+    public function arrayOfType(string $key, string $type): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -464,7 +417,7 @@ class JsonValidator {
         }
 
         foreach ($value as $index => $item) {
-            $this->whereType($key.'.'.$index, $type);
+            $this->isType($key.'.'.$index, $type);
         }
 
         return $this;
@@ -478,7 +431,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereEach(string $key, callable $callback): static {
+    public function passesEach(string $key, callable $callback): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -512,7 +465,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereNotEmpty(string $key): static {
+    public function isNotEmpty(string $key): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -537,7 +490,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereSchema(string $key, array $schema): static {
+    public function passesSchema(string $key, array $schema): static {
         $data = '' === $key ? $this->data : $this->getValue($key);
 
         if ('' !== $key && ! $this->hasKey($key)) {
@@ -567,12 +520,12 @@ class JsonValidator {
                 }
                 else {
                     // This is a nested schema
-                    $this->whereSchema($fullKey, $validationRules);
+                    $this->passesSchema($fullKey, $validationRules);
                 }
             }
             elseif (is_string($validationRules)) {
                 // Simple type validation
-                $this->whereType($fullKey, $validationRules);
+                $this->isType($fullKey, $validationRules);
             }
         }
 
@@ -587,7 +540,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereIn(string $key, array|string $allowedValues): static {
+    public function isIn(string $key, array|string $allowedValues): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -632,7 +585,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereBetween(string $key, float|int $min, float|int $max): static {
+    public function isBetween(string $key, float|int $min, float|int $max): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -664,7 +617,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereLength(string $key, ?int $exact = null, ?int $min = null, ?int $max = null): static {
+    public function hasLength(string $key, ?int $exact = null, ?int $min = null, ?int $max = null): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -706,7 +659,7 @@ class JsonValidator {
      *
      * @return $this
      */
-    public function whereRegexMatch(string $key, string $pattern, bool $matchAll = false): static {
+    public function matchesRegex(string $key, string $pattern, bool $matchAll = false): static {
         if (! $this->hasKey($key)) {
             $this->addError($key, "The '{$key}' is required");
 
@@ -735,9 +688,9 @@ class JsonValidator {
      *
      * @return array Validation errors
      */
-    public function errors(): array {
+    public function getErrors(): array {
         if (! $this->validated) {
-            $this->passes();
+            $this->validated();
         }
 
         return $this->errors;
@@ -748,7 +701,7 @@ class JsonValidator {
      *
      * @return bool Whether validation passed
      */
-    public function passes(): bool {
+    public function validated(): bool {
         $this->validated = true;
 
         return empty($this->errors);
@@ -760,21 +713,22 @@ class JsonValidator {
      * @return array|null The validated data or null if validation failed
      */
     public function getValidData(): ?array {
-        return $this->passes() ? $this->data : null;
+        return $this->validated() ? $this->data : null;
     }
 
     /**
      * Execute the validation and throw an exception if invalid
      *
+     * @throws \JsonException
      * @throws JsonValidationException If validation fails
-     * @return array                   The validated data
+     * @return bool                    Whether the validation was successful
      */
-    public function validate(): array {
-        if ($this->fails()) {
-            throw new JsonValidationException('Validation failed: '.json_encode($this->errors));
+    public function validatedStrict(): bool {
+        if ($this->failed()) {
+            throw new JsonValidationException('Validation failed: '.json_encode($this->errors, JSON_THROW_ON_ERROR));
         }
 
-        return $this->data;
+        return true;
     }
 
     /**
@@ -782,8 +736,8 @@ class JsonValidator {
      *
      * @return bool Whether validation failed
      */
-    public function fails(): bool {
-        return ! $this->passes();
+    public function failed(): bool {
+        return ! $this->validated();
     }
 
     /**
@@ -898,29 +852,29 @@ class JsonValidator {
 
         // Check type
         if (isset($rules['type'])) {
-            $this->whereType($key, $rules['type']);
+            $this->isType($key, $rules['type']);
         }
 
         // Check enum values
         if (isset($rules['enum'])) {
-            $this->whereIn($key, $rules['enum']);
+            $this->isIn($key, $rules['enum']);
         }
 
         // Check min/max for numbers
         if (isset($rules['min']) || isset($rules['max'])) {
             $min = $rules['min'] ?? PHP_FLOAT_MIN;
             $max = $rules['max'] ?? PHP_FLOAT_MAX;
-            $this->whereBetween($key, $min, $max);
+            $this->isBetween($key, $min, $max);
         }
 
         // Check string length
         if (isset($rules['minLength']) || isset($rules['maxLength'])) {
-            $this->whereLength($key, null, $rules['minLength'] ?? null, $rules['maxLength'] ?? null);
+            $this->hasLength($key, null, $rules['minLength'] ?? null, $rules['maxLength'] ?? null);
         }
 
         // Check pattern
         if (isset($rules['pattern'])) {
-            $this->whereRegexMatch($key, $rules['pattern']);
+            $this->matchesRegex($key, $rules['pattern']);
         }
     }
 }

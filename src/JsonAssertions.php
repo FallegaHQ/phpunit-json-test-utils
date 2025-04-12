@@ -36,7 +36,7 @@ trait JsonAssertions {
         $validator = new JsonValidator($json);
         $validator->has($key);
 
-        Assert::assertTrue($validator->passes(), $message ?? $this->formatValidatorErrors($validator->errors()));
+        Assert::assertTrue($validator->validated(), $message ?? $this->formatValidatorErrors($validator->getErrors()));
     }
 
     /**
@@ -50,7 +50,7 @@ trait JsonAssertions {
         $validator = new JsonValidator($json);
         $validator->hasNot($key);
 
-        Assert::assertTrue($validator->passes(), $message ?? $this->formatValidatorErrors($validator->errors()));
+        Assert::assertTrue($validator->validated(), $message ?? $this->formatValidatorErrors($validator->getErrors()));
     }
 
     /**
@@ -63,9 +63,9 @@ trait JsonAssertions {
      */
     protected function assertJsonEquals(array|string $json, string $key, mixed $expectedValue, ?string $message = null): void {
         $validator = new JsonValidator($json);
-        $validator->where($key, $expectedValue);
+        $validator->hasWithValue($key, $expectedValue);
 
-        Assert::assertTrue($validator->passes(), $message ?? $this->formatValidatorErrors($validator->errors()));
+        Assert::assertTrue($validator->validated(), $message ?? $this->formatValidatorErrors($validator->getErrors()));
     }
 
     /**
@@ -78,9 +78,9 @@ trait JsonAssertions {
      */
     protected function assertJsonType(array|string $json, string $key, string $expectedType, ?string $message = null): void {
         $validator = new JsonValidator($json);
-        $validator->whereType($key, $expectedType);
+        $validator->isType($key, $expectedType);
 
-        Assert::assertTrue($validator->passes(), $message ?? $this->formatValidatorErrors($validator->errors()));
+        Assert::assertTrue($validator->validated(), $message ?? $this->formatValidatorErrors($validator->getErrors()));
     }
 
     /**
@@ -93,9 +93,9 @@ trait JsonAssertions {
      */
     protected function assertJsonCondition(array|string $json, string $key, callable $condition, ?string $message = null): void {
         $validator = new JsonValidator($json);
-        $validator->whereIs($key, $condition);
+        $validator->passes($key, $condition);
 
-        Assert::assertTrue($validator->passes(), $message ?? $this->formatValidatorErrors($validator->errors()));
+        Assert::assertTrue($validator->validated(), $message ?? $this->formatValidatorErrors($validator->getErrors()));
     }
 
     /**

@@ -29,6 +29,11 @@ enum UserRole: string {
     case Subscriber = 'subscriber';
 }
 
+enum Status: string {
+    case Active   = 'active';
+    case Inactive = 'inactive';
+}
+
 #[CoversClass(Validator::class)]
 #[CoversClass(JsonValidationException::class)]
 class JsonValidatorTest extends TestCase {
@@ -110,7 +115,7 @@ class JsonValidatorTest extends TestCase {
      */
     protected function setUp(): void {
         parent::setUp();
-        $this->validArray = json_decode($this->validJson, true, flags: JSON_THROW_ON_ERROR);
+        $this->validArray = json_decode($this->validJson, true, 512, JSON_THROW_ON_ERROR);
     }
 
     public function testValidateJsonString(): void {
@@ -120,7 +125,7 @@ class JsonValidatorTest extends TestCase {
             Validator::validator($this->validJson);
         }
         catch (Throwable) {
-            self::fail('Case invalid has no email.');
+            self::fail('A exception has been thrown.');
         }
 
     }
@@ -130,190 +135,190 @@ class JsonValidatorTest extends TestCase {
         Validator::validator('{invalid:json}');
     }
 
-    public function testWhereIsWithValidCondition(): void {
+    public function testPassesWithValidCondition(): void {
         $result = Validator::validator($this->validArray)
-            ->whereIs('age', fn ($age) => $age >= 18)
-            ->passes();
+            ->passes('age', fn ($age) => $age >= 18)
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereIsWithInvalidCondition(): void {
-        $result = Validator::validator($this->validArray)
-            ->whereIs('age', fn ($age) => $age > 100)
-            ->passes();
+    public function testPassesWithInvalidCondition(): void {
+        $validator = Validator::validator($this->validArray);
+        $result    = $validator->passes('age', fn ($age) => $age > 100)
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereIsWithCustomMessage(): void {
+    public function testPassesWithCustomMessage(): void {
         $validator = Validator::validator($this->validArray)
-            ->whereIs('age', fn ($age) => $age > 100, 'Age must be greater than 100');
+            ->passes('age', fn ($age) => $age > 100, 'Age must be greater than 100');
 
-        $errors    = $validator->errors();
+        $errors    = $validator->getErrors();
 
         static::assertArrayHasKey('age', $errors);
         static::assertContains('Age must be greater than 100', $errors['age']);
     }
 
-    public function testWhereWithValidValue(): void {
+    public function testHasWithValueWithValidValue(): void {
         $result = Validator::validator($this->validArray)
-            ->where('name', 'John')
-            ->passes();
+            ->hasWithValue('name', 'John')
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereWithInvalidValue(): void {
+    public function testHasWithValueWithInvalidValue(): void {
         $result = Validator::validator($this->validArray)
-            ->where('name', 'Jane')
-            ->passes();
+            ->hasWithValue('name', 'Jane')
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereTypeWithValidType(): void {
+    public function testIsTypeWithValidType(): void {
         $result = Validator::validator($this->validArray)
-            ->whereType('name', 'string')
-            ->whereType('age', 'integer')
-            ->whereType('roles', 'array')
-            ->whereType('settings', 'array')
-            ->passes();
+            ->isType('name', 'string')
+            ->isType('age', 'integer')
+            ->isType('roles', 'array')
+            ->isType('settings', 'array')
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereTypeWithInvalidType(): void {
+    public function testIsTypeWithInvalidType(): void {
         $result = Validator::validator($this->validArray)
-            ->whereType('name', 'integer')
-            ->passes();
+            ->isType('name', 'integer')
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereTypeWithValidNullAndObjectType(): void {
+    public function testIsTypeWithValidNullAndObjectType(): void {
         $validator = new Validator([
             'obj'  => new stdClass(),
             'none' => null,
         ], );
-        $result    = $validator->whereType('obj', 'object')
-            ->whereType('obj', stdClass::class)
-            ->whereType('none', 'null')
-            ->passes();
+        $result    = $validator->isType('obj', 'object')
+            ->isType('obj', stdClass::class)
+            ->isType('none', 'null')
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereTypeWithMissingKey(): void {
+    public function testIsTypeWithMissingKey(): void {
         $result = Validator::validator($this->validArray)
-            ->whereType('nonexistent', 'string')
-            ->passes();
+            ->isType('nonexistent', 'string')
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereAllTypes(): void {
+    public function testhasTypedItems(): void {
         $result = Validator::validator($this->validArray)
-            ->whereAllTypes([
+            ->hasTypedItems([
                 'name'  => 'string',
                 'age'   => 'integer',
                 'roles' => 'array',
             ])
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereAllTypesWithInvalidType(): void {
+    public function testhasTypedItemsWithInvalidType(): void {
         $result = Validator::validator($this->validArray)
-            ->whereAllTypes([
+            ->hasTypedItems([
                 'name' => 'string',
                 'age'  => 'string',
             ])
-            ->passes();
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereOptional(): void {
+    public function testOptional(): void {
         $result    = Validator::validator($this->validArray)
-            ->whereOptional('nonexistent', 'doesnt-exist')
-            ->passes();
+            ->optional('nonexistent', 'doesnt-exist')
+            ->validated();
 
         static::assertTrue($result);
 
         $validator = Validator::validator($this->validArray);
-        $result    = $validator->whereOptional('age', 30)
-            ->passes();
+        $result    = $validator->optional('age', 30)
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereOptionalType(): void {
+    public function testOptionalWithType(): void {
         $result    = Validator::validator($this->validArray)
-            ->whereOptionalType('nonexistent', 'string')
-            ->passes();
+            ->optionalWithType('nonexistent', 'string')
+            ->validated();
 
         static::assertTrue($result);
 
         $validator = Validator::validator($this->validArray);
-        $result    = $validator->whereOptionalType('age', 'int')
-            ->passes();
+        $result    = $validator->optionalWithType('age', 'int')
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereNot(): void {
+    public function testHasNot(): void {
         $result = Validator::validator($this->validArray)
-            ->whereNot('nonexistent')
-            ->passes();
+            ->hasNot('nonexistent')
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereNotWithExistingKey(): void {
+    public function testHasNotWithExistingKey(): void {
         $result = Validator::validator($this->validArray)
-            ->whereNot('name')
-            ->passes();
+            ->hasNot('name')
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereInWithValidValue(): void {
+    public function testIsInWithValidValue(): void {
         $result = Validator::validator($this->validArray)
-            ->whereIn('name', [
+            ->isIn('name', [
                 'John',
                 'Jane',
                 'Alice',
             ], )
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereInWithInvalidValue(): void {
+    public function testIsInWithInvalidValue(): void {
         $result = Validator::validator($this->validArray)
-            ->whereIn('name', [
+            ->isIn('name', [
                 'Jane',
                 'Alice',
             ], )
-            ->passes();
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereInWithMissingKey(): void {
+    public function testIsInWithMissingKey(): void {
         $result = Validator::validator($this->validArray)
-            ->whereIn('nonexistent', [
+            ->isIn('nonexistent', [
                 'value1',
                 'value2',
             ], )
-            ->passes();
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereInWithEnumClass(): void {
+    public function testIsInWithEnumClass(): void {
         $mockEnum      = new class() {
             public const VALUE1 = 'John';
             public const VALUE2 = 'Jane';
@@ -337,8 +342,8 @@ class JsonValidatorTest extends TestCase {
 
         $validator     = Validator::validator($this->validArray);
 
-        $result        = $validator->whereIn('name', $mockEnumClass)
-            ->passes();
+        $result        = $validator->isIn('name', $mockEnumClass)
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -346,7 +351,7 @@ class JsonValidatorTest extends TestCase {
     public function testHas(): void {
         $result = Validator::validator($this->validArray)
             ->has('name')
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -354,7 +359,7 @@ class JsonValidatorTest extends TestCase {
     public function testHasWithMissingKey(): void {
         $result = Validator::validator($this->validArray)
             ->has('nonexistent')
-            ->passes();
+            ->validated();
 
         static::assertFalse($result);
     }
@@ -366,56 +371,40 @@ class JsonValidatorTest extends TestCase {
                 'age',
                 'email',
             ], )
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
 
     public function testHasAllWithMissingKey(): void {
-        $result = Validator::validator($this->validArray)
-            ->hasAll([
-                'name',
-                'nonexistent',
-            ], )
-            ->passes();
+        $validator = Validator::validator($this->validArray);
+        $result    = $validator->hasAll([
+            'name',
+            'nonexistent',
+        ], )
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testHasNot(): void {
+    public function testHasNoneOf(): void {
         $result = Validator::validator($this->validArray)
-            ->hasNot('nonexistent')
-            ->passes();
-
-        static::assertTrue($result);
-    }
-
-    public function testHasNotWithExistingKey(): void {
-        $result = Validator::validator($this->validArray)
-            ->hasNot('name')
-            ->passes();
-
-        static::assertFalse($result);
-    }
-
-    public function testHasNone(): void {
-        $result = Validator::validator($this->validArray)
-            ->hasNone([
+            ->hasNoneOf([
                 'nonexistent1',
                 'nonexistent2',
             ], )
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testHasNoneWithExistingKey(): void {
+    public function testHasNoneOofWithExistingKey(): void {
         $result = Validator::validator($this->validArray)
-            ->hasNone([
+            ->hasNoneOf([
                 'nonexistent',
                 'name',
             ], )
-            ->passes();
+            ->validated();
 
         static::assertFalse($result);
     }
@@ -423,7 +412,7 @@ class JsonValidatorTest extends TestCase {
     public function testHasAnyOf(): void {
         $result = Validator::validator($this->validArray)
             ->hasAnyOf('name', 'nonexistent')
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -431,158 +420,158 @@ class JsonValidatorTest extends TestCase {
     public function testHasAnyOfWithAllMissingKeys(): void {
         $result = Validator::validator($this->validArray)
             ->hasAnyOf('nonexistent1', 'nonexistent2')
-            ->passes();
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereIsFile(): void {
+    public function testIsFile(): void {
         $tempFile = tempnam(sys_get_temp_dir(), 'test');
 
         $data     = [
             'file_path' => $tempFile,
         ];
         $result   = Validator::validator($data)
-            ->whereIsFile('file_path')
-            ->passes();
+            ->isFile('file_path')
+            ->validated();
 
         static::assertTrue($result);
 
         unlink($tempFile);
     }
 
-    public function testWhereIsFileWithNonexistentFile(): void {
+    public function testIsFileWithNonexistentFile(): void {
         $data   = [
             'file_path' => '/path/to/nonexistent/file.txt',
         ];
         $result = Validator::validator($data)
-            ->whereIsFile('file_path')
-            ->passes();
+            ->isFile('file_path')
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereIsFileWithNonStringValue(): void {
+    public function testIsFileWithNonStringValue(): void {
         $data   = [
             'file_path' => 123,
         ];
         $result = Validator::validator($data)
-            ->whereIsFile('file_path')
-            ->passes();
+            ->isFile('file_path')
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereIsFileWithMissingKey(): void {
+    public function testIsFileWithMissingKey(): void {
         $result = Validator::validator($this->validArray)
-            ->whereIsFile('nonexistent')
-            ->passes();
+            ->isFile('nonexistent')
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereIsFileWithExistenceFlagOff(): void {
+    public function testIsFileWithExistenceFlagOff(): void {
         $data   = [
             'file_path' => '/path/to/nonexistent/file.txt',
         ];
         $result = Validator::validator($data)
-            ->whereIsFile('file_path', false)
-            ->passes();
+            ->isFile('file_path', false)
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereIsValid(): void {
+    public function tesPasses(): void {
         $result = Validator::validator($this->validArray)
-            ->whereIsValid('email', function ($email) {
+            ->passes('email', function ($email) {
                 return false !== filter_var($email, FILTER_VALIDATE_EMAIL) ? true : 'Invalid email format';
             }, )
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereIsValidWithInvalidValue(): void {
+    public function tesPassesWithInvalidValue(): void {
         $data   = [
             'email' => 'not-an-email',
         ];
         $result = Validator::validator($data)
-            ->whereIsValid('email', function ($email) {
+            ->passes('email', function ($email) {
                 return false !== filter_var($email, FILTER_VALIDATE_EMAIL) ? true : 'Invalid email format';
             }, )
-            ->passes();
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereIsValidWithMissingKey(): void {
+    public function tesPassesWithMissingKey(): void {
         $result = Validator::validator($this->validArray)
-            ->whereIsValid('nonexistent', function () {
+            ->passes('nonexistent', function () {
                 return true;
             }, )
-            ->passes();
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereRegexMatch(): void {
+    public function testMatchesRegex(): void {
         $result = Validator::validator($this->validArray)
-            ->whereRegexMatch('email', '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/')
-            ->passes();
+            ->matchesRegex('email', '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/')
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereRegexMatchWithInvalidValue(): void {
+    public function testMatchesRegexWithInvalidValue(): void {
         $data   = [
             'email' => 'not-an-email',
         ];
         $result = Validator::validator($data)
-            ->whereRegexMatch('email', '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/')
-            ->passes();
+            ->matchesRegex('email', '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/')
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereRegexMatchWithMatchAll(): void {
+    public function testMatchesRegexWithMatchAll(): void {
         $data   = [
             'text' => 'one two three',
         ];
         $result = Validator::validator($data)
-            ->whereRegexMatch('text', '/\w+/', true)
-            ->passes();
+            ->matchesRegex('text', '/\w+/', true)
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereRegexMatchWithMissingKey(): void {
+    public function testMatchesRegexWithMissingKey(): void {
         $result = Validator::validator($this->validArray)
-            ->whereRegexMatch('nonexistent', '/pattern/')
-            ->passes();
+            ->matchesRegex('nonexistent', '/pattern/')
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereRegexMatchWithNonStringValue(): void {
+    public function testMatchesRegexWithNonStringValue(): void {
         $result = Validator::validator($this->validArray)
-            ->whereRegexMatch('age', '/pattern/')
-            ->passes();
+            ->matchesRegex('age', '/pattern/')
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testPasses(): void {
+    public function testValidated(): void {
         $result = Validator::validator($this->validArray)
             ->has('name')
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testFails(): void {
+    public function testFailed(): void {
         $result = Validator::validator($this->validArray)
             ->has('nonexistent')
-            ->fails();
+            ->failed();
 
         static::assertTrue($result);
     }
@@ -590,10 +579,10 @@ class JsonValidatorTest extends TestCase {
     public function testErrors(): void {
         $validator = Validator::validator($this->validArray)
             ->has('nonexistent')
-            ->where('name', 'Jane');
+            ->hasWithValue('name', 'Jane');
 
-        $validator->passes();
-        $errors    = $validator->errors();
+        $validator->validated();
+        $errors    = $validator->getErrors();
 
         static::assertArrayHasKey('nonexistent', $errors);
         static::assertArrayHasKey('name', $errors);
@@ -617,74 +606,78 @@ class JsonValidatorTest extends TestCase {
         static::assertNull($data);
     }
 
-    public function testValidate(): void {
+    /**
+     * @throws JsonException
+     */
+    public function testValidatedStrict(): void {
         $validator = Validator::validator($this->validArray)
             ->has('name');
 
-        $data      = $validator->validate();
-
-        static::assertEquals($this->validArray, $data);
+        static::assertTrue($validator->validatedStrict());
     }
 
-    public function testValidateWithFailedValidationThrowsException(): void {
+    /**
+     * @throws JsonException
+     */
+    public function testValidateStrictThrowsException(): void {
         $this->expectException(JsonValidationException::class);
 
         $validator = Validator::validator($this->validArray)
             ->has('nonexistent');
 
-        $validator->validate();
+        $validator->validatedStrict();
     }
 
     public function testChainedValidation(): void {
         $result = Validator::validator($this->validArray)
             ->has('name')
-            ->where('name', 'John')
-            ->whereType('age', 'integer')
-            ->whereIs('age', fn ($age) => $age >= 18)
-            ->whereIn('email', [
+            ->hasWithValue('name', 'John')
+            ->isType('age', 'integer')
+            ->passes('age', fn ($age) => $age >= 18)
+            ->isIn('email', [
                 'john@example.com',
                 'jane@example.com',
             ], )
-            ->whereIsValid('email', fn ($email) => false !== filter_var($email, FILTER_VALIDATE_EMAIL))
-            ->whereRegexMatch('email', '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/')
+            ->passes('email', fn ($email) => false !== filter_var($email, FILTER_VALIDATE_EMAIL))
+            ->matchesRegex('email', '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/')
             ->hasAll([
                 'name',
                 'age',
                 'email',
             ], )
-            ->hasNone([
+            ->hasNoneOf([
                 'nonexistent1',
                 'nonexistent2',
             ], )
             ->hasAnyOf('name', 'nonexistent')
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereInWithPureEnum(): void {
+    public function testIsInWithPureEnum(): void {
         $data                   = $this->testData;
         $data['user']['status'] = UserStatus::Active->name;
 
         $validator              = Validator::validator($data);
-        $result                 = $validator->whereIn('user.status', UserStatus::class)
-            ->passes();
+        $result                 = $validator->isIn('user.status', UserStatus::class)
+            ->validated();
 
         static::assertTrue($result);
 
         $data['user']['status'] = 'Unknown';
 
         $result                 = Validator::validator($data)
-            ->whereIn('user.status', UserStatus::class)
-            ->passes();
+            ->isIn('user.status', UserStatus::class)
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereInWithBackedEnum(): void {
+    public function testIsInWithBackedEnum(): void {
         $validator            = Validator::validator($this->testData);
-        $result               = $validator->whereIn('user.role', UserRole::class)
-            ->passes();
+        $result               = $validator->isIn('user.role', UserRole::class)
+            ->validated();
 
         static::assertTrue($result);
 
@@ -692,8 +685,8 @@ class JsonValidatorTest extends TestCase {
         $data['user']['role'] = 'guest';
 
         $result               = Validator::validator($data)
-            ->whereIn('user.role', UserRole::class)
-            ->passes();
+            ->isIn('user.role', UserRole::class)
+            ->validated();
 
         static::assertFalse($result);
     }
@@ -701,17 +694,21 @@ class JsonValidatorTest extends TestCase {
     /**
      * @throws JsonException
      */
-    public function testWhereTypeWithEnum(): void {
+    public function testIsTypeWithEnum(): void {
         $json      = '{"status":"active"}';
         $validator = Validator::validator($json);
 
-        $result    = $validator->whereIsValid('status', function ($value) {
-            return in_array($value, [
-                'active',
-                'inactive',
-            ], true, ) ? true : 'Status must be either active or inactive';
-        })
-            ->passes();
+        $result    = $validator->isType('status', 'string')->validated();
+
+        static::assertTrue($result);
+
+        $json      = json_encode([
+            'status' => 'inactive',
+        ], flags: JSON_THROW_ON_ERROR);
+        $validator = Validator::validator($json);
+
+        $result    = $validator->isIn('status', Status::class)
+            ->validated();
 
         static::assertTrue($result);
 
@@ -720,18 +717,13 @@ class JsonValidatorTest extends TestCase {
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
 
-        $result    = $validator->whereIsValid('status', function ($value) {
-            return in_array($value, [
-                'active',
-                'inactive',
-            ], true, ) ? true : 'Status must be either active or inactive';
-        })
-            ->passes();
+        $result    = $validator->isIn('status', Status::class)
+            ->validated();
 
         static::assertFalse($result);
-        $errors    = $validator->errors();
+        $errors    = $validator->getErrors();
         static::assertArrayHasKey('status', $errors);
-        static::assertContains('Status must be either active or inactive', $errors['status']);
+        static::assertContains("The 'status' must be one of: active, inactive", $errors['status']);
     }
 
     public function testComplexEnumValidation(): void {
@@ -747,12 +739,12 @@ class JsonValidatorTest extends TestCase {
 
         $validator = Validator::validator($data);
 
-        $result    = $validator->whereType('user.id', 'integer')
-            ->whereType('user.name', 'string')
-            ->whereIn('user.status', UserStatus::class)
-            ->whereIn('user.role', UserRole::class)
-            ->whereType('user.verified', 'boolean')
-            ->passes();
+        $result    = $validator->isType('user.id', 'integer')
+            ->isType('user.name', 'string')
+            ->isIn('user.status', UserStatus::class)
+            ->isIn('user.role', UserRole::class)
+            ->isType('user.verified', 'boolean')
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -760,7 +752,7 @@ class JsonValidatorTest extends TestCase {
     public function testHasWithDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
         $result    = $validator->has('user.profile.name')
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -768,7 +760,7 @@ class JsonValidatorTest extends TestCase {
     public function testHasWithDeepNestedDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
         $result    = $validator->has('user.profile.contact.address.country')
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -776,64 +768,64 @@ class JsonValidatorTest extends TestCase {
     public function testHasWithNonExistentNestedKey(): void {
         $validator = Validator::validator($this->nestedData);
         $result    = $validator->has('user.profile.contact.address.zipcode')
-            ->passes();
+            ->validated();
 
         static::assertFalse($result);
     }
 
-    public function testWhereWithDotNotation(): void {
+    public function testHasWithValueWithDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
-        $result    = $validator->where('user.profile.name', 'John Doe')
-            ->passes();
+        $result    = $validator->hasWithValue('user.profile.name', 'John Doe')
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereTypeWithDotNotation(): void {
+    public function testIsTypeWithDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
-        $result    = $validator->whereType('user.id', 'integer')
-            ->whereType('user.profile.name', 'string')
-            ->whereType('user.settings.notifications', 'boolean')
-            ->whereType('metadata.version', 'float')
-            ->passes();
+        $result    = $validator->isType('user.id', 'integer')
+            ->isType('user.profile.name', 'string')
+            ->isType('user.settings.notifications', 'boolean')
+            ->isType('metadata.version', 'float')
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereInWithDotNotation(): void {
+    public function testIsInWithDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
-        $result    = $validator->whereIn('user.settings.theme', [
+        $result    = $validator->isIn('user.settings.theme', [
             'light',
             'dark',
             'auto',
         ], )
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereIsWithDotNotation(): void {
+    public function testPassesWithDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
-        $result    = $validator->whereIs('user.profile.name', function ($value) {
+        $result    = $validator->passes('user.profile.name', function ($value) {
             return str_starts_with($value, 'John');
         }, )
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereRegexMatchWithDotNotation(): void {
+    public function testMatchesRegexWithDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
-        $result    = $validator->whereRegexMatch('user.profile.email', '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/')
-            ->passes();
+        $result    = $validator->matchesRegex('user.profile.email', '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/')
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereNotWithDotNotation(): void {
+    public function testHasNotWithDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
-        $result    = $validator->whereNot('user.profile.contact.address.zipcode')
-            ->passes();
+        $result    = $validator->hasNot('user.profile.contact.address.zipcode')
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -845,7 +837,7 @@ class JsonValidatorTest extends TestCase {
             'user.profile.email',
             'user.settings.theme',
         ])
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -853,17 +845,17 @@ class JsonValidatorTest extends TestCase {
     public function testHasAnyOfWithDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
         $result    = $validator->hasAnyOf('user.profile.nonexistent', 'user.settings.theme', 'user.unknown')
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
 
-    public function testWhereIsValidWithDotNotation(): void {
+    public function tesPassesWithDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
-        $result    = $validator->whereIsValid('user.profile.email', function ($email) {
+        $result    = $validator->passes('user.profile.email', function ($email) {
             return false !== filter_var($email, FILTER_VALIDATE_EMAIL) ? true : 'Invalid email format';
         }, )
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -871,18 +863,18 @@ class JsonValidatorTest extends TestCase {
     public function testComplexValidationWithDotNotation(): void {
         $validator = Validator::validator($this->nestedData);
         $result    = $validator->has('user.profile')
-            ->whereType('user.profile', 'array')
-            ->whereType('user.id', 'integer')
-            ->where('user.profile.contact.address.country', 'USA')
-            ->whereRegexMatch('user.profile.contact.phone', '/^\d{3}-\d{3}-\d{4}$/')
-            ->whereIn('user.settings.theme', [
+            ->isType('user.profile', 'array')
+            ->isType('user.id', 'integer')
+            ->hasWithValue('user.profile.contact.address.country', 'USA')
+            ->matchesRegex('user.profile.contact.phone', '/^\d{3}-\d{3}-\d{4}$/')
+            ->isIn('user.settings.theme', [
                 'light',
                 'dark',
             ], )
-            ->whereIs('metadata.created_at', function ($date) {
+            ->passes('metadata.created_at', function ($date) {
                 return false !== strtotime($date);
             }, )
-            ->passes();
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -890,8 +882,8 @@ class JsonValidatorTest extends TestCase {
     public function testValidationWithArrayElements(): void {
         $validator = Validator::validator($this->nestedData);
         $result    = $validator->has('posts.0.title')
-            ->where('posts.1.title', 'Second Post')
-            ->passes();
+            ->hasWithValue('posts.1.title', 'Second Post')
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -904,8 +896,8 @@ class JsonValidatorTest extends TestCase {
         ]);
         $result      = $validator->has('profile.name')
             ->has('profile.contact.address.city')
-            ->where('profile.contact.address.country', 'USA')
-            ->passes();
+            ->hasWithValue('profile.contact.address.country', 'USA')
+            ->validated();
 
         static::assertTrue($result);
     }
@@ -913,7 +905,7 @@ class JsonValidatorTest extends TestCase {
     /**
      * @throws JsonException
      */
-    public function testWhereContainsType(): void {
+    public function testArrayOfType(): void {
         $json      = json_encode([
             'array' => [
                 1,
@@ -922,8 +914,8 @@ class JsonValidatorTest extends TestCase {
             ],
         ], flags: JSON_THROW_ON_ERROR, );
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereContainsType('array', 'integer')
-            ->passes(), );
+        static::assertTrue($validator->arrayOfType('array', 'integer')
+            ->validated(), );
 
         $json      = json_encode([
             'array' => [
@@ -933,15 +925,15 @@ class JsonValidatorTest extends TestCase {
             ],
         ], flags: JSON_THROW_ON_ERROR, );
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereContainsType('array', 'integer')
-            ->passes(), );
+        static::assertFalse($validator->arrayOfType('array', 'integer')
+            ->validated(), );
 
         $json      = json_encode([
             'array' => 'string',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereContainsType('array', 'integer')
-            ->passes(), );
+        static::assertFalse($validator->arrayOfType('array', 'integer')
+            ->validated(), );
 
         $json      = json_encode([
             'a' => [
@@ -951,8 +943,8 @@ class JsonValidatorTest extends TestCase {
             ],
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        $result    = $validator->whereContainsType('a.b', 'string')
-            ->passes();
+        $result    = $validator->arrayOfType('a.b', 'string')
+            ->validated();
         static::assertTrue($result);
 
         $json      = json_encode([
@@ -963,168 +955,171 @@ class JsonValidatorTest extends TestCase {
             ],
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        $result    = $validator->whereContainsType('a.b', 'int')
-            ->passes();
+        $result    = $validator->arrayOfType('a.b', 'int')
+            ->validated();
         static::assertFalse($result);
     }
 
     /**
      * @throws JsonException
      */
-    public function testWhereDate(): void {
+    public function testIDate(): void {
         $json      = json_encode([
             'date' => '2023-05-15',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereDate('date')
-            ->passes(), );
+        static::assertTrue($validator->isDate('date')
+            ->validated(), );
 
         $json      = json_encode([
             'date' => '15/05/2023',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereDate('date', 'd/m/Y')
-            ->passes(), );
+        static::assertTrue($validator->isDate('date', 'd/m/Y')
+            ->validated(), );
 
         $json      = json_encode([
             'date' => 'not-a-date',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereDate('date')
-            ->passes(), );
-        static::assertArrayHasKey('date', $validator->errors());
+        static::assertFalse($validator->isDate('date')
+            ->validated(), );
+        static::assertArrayHasKey('date', $validator->getErrors());
     }
 
     /**
      * @throws JsonException
      */
-    public function testWhereEmail(): void {
+    public function testIsEmail(): void {
         $json      = json_encode([
             'email' => 'test@example.com',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereEmail('email')
-            ->passes(), );
+        static::assertTrue($validator->isEmail('email')
+            ->validated(), );
 
         $json      = json_encode([
             'email' => 'not-an-email',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereEmail('email')
-            ->passes(), );
-        static::assertArrayHasKey('email', $validator->errors());
+
+        $result    = $validator->isEmail('email')
+            ->validated();
+        static::assertFalse($result);
+        static::assertArrayHasKey('email', $validator->getErrors());
+        static::assertEmpty($validator->getValidData());
     }
 
     /**
      * @throws JsonException
      */
-    public function testWhereUrl(): void {
+    public function testIsUrl(): void {
         $json      = json_encode([
             'url' => 'https://example.com',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereUrl('url')
-            ->passes(), );
+        static::assertTrue($validator->isURL('url')
+            ->validated(), );
 
         $json      = json_encode([
             'url' => 'not-a-url',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereUrl('url')
-            ->passes(), );
-        static::assertArrayHasKey('url', $validator->errors());
+        static::assertFalse($validator->isURL('url')
+            ->validated(), );
+        static::assertArrayHasKey('url', $validator->getErrors());
     }
 
     /**
      * @throws JsonException
      */
-    public function testWhereIp(): void {
+    public function testIsIp(): void {
         $json      = json_encode([
             'ip' => '192.168.1.1',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereIp('ip')
-            ->passes(), );
+        static::assertTrue($validator->isIP('ip')
+            ->validated(), );
 
         $json      = json_encode([
             'ip' => '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereIp('ip')
-            ->passes(), );
+        static::assertTrue($validator->isIP('ip')
+            ->validated(), );
 
         $json      = json_encode([
             'ip' => 'not-an-ip',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereIp('ip')
-            ->passes(), );
-        static::assertArrayHasKey('ip', $validator->errors());
+        static::assertFalse($validator->isIP('ip')
+            ->validated(), );
+        static::assertArrayHasKey('ip', $validator->getErrors());
 
         $json      = json_encode([
             'ip' => '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereIp('ip', FILTER_FLAG_IPV4)
-            ->passes(), );
+        static::assertFalse($validator->isIP('ip', FILTER_FLAG_IPV4)
+            ->validated(), );
     }
 
     /**
      * @throws JsonException
      */
-    public function testWhereBetween(): void {
+    public function testIsBetween(): void {
         $json      = json_encode([
             'number' => 50,
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereBetween('number', 1, 100)
-            ->passes(), );
+        static::assertTrue($validator->isBetween('number', 1, 100)
+            ->validated(), );
 
         $json      = json_encode([
             'number' => 1,
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereBetween('number', 1, 100)
-            ->passes(), );
+        static::assertTrue($validator->isBetween('number', 1, 100)
+            ->validated(), );
 
         $json      = json_encode([
             'number' => 101,
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereBetween('number', 1, 100)
-            ->passes(), );
-        static::assertArrayHasKey('number', $validator->errors());
+        static::assertFalse($validator->isBetween('number', 1, 100)
+            ->validated(), );
+        static::assertArrayHasKey('number', $validator->getErrors());
 
         $json      = json_encode([
             'number' => 'string',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereBetween('number', 1, 100)
-            ->passes(), );
+        static::assertFalse($validator->isBetween('number', 1, 100)
+            ->validated(), );
     }
 
     /**
      * @throws JsonException
      */
-    public function testWhereLength(): void {
+    public function testhasLength(): void {
         $json      = json_encode([
             'string' => 'hello',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereLength('string', 5)
-            ->passes(), );
+        static::assertTrue($validator->hasLength('string', 5)
+            ->validated(), );
 
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereLength('string', null, 3, 10)
-            ->passes(), );
+        static::assertTrue($validator->hasLength('string', null, 3, 10)
+            ->validated(), );
 
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereLength('string', null, 10)
-            ->passes(), );
+        static::assertFalse($validator->hasLength('string', null, 10)
+            ->validated(), );
 
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereLength('string', null, null, 3)
-            ->passes(), );
+        static::assertFalse($validator->hasLength('string', null, null, 3)
+            ->validated(), );
 
         $json      = json_encode([
             'array' => [
@@ -1134,48 +1129,48 @@ class JsonValidatorTest extends TestCase {
             ],
         ], flags: JSON_THROW_ON_ERROR, );
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereLength('array', 3)
-            ->passes(), );
+        static::assertTrue($validator->hasLength('array', 3)
+            ->validated(), );
 
         $json      = json_encode([
             'value' => 123,
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereLength('value')
-            ->passes(), );
+        static::assertFalse($validator->hasLength('value')
+            ->validated(), );
     }
 
     /**
      * @throws JsonException
      */
-    public function testWhereContains(): void {
+    public function testContains(): void {
         $json      = json_encode([
             'string' => 'hello world',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereContains('string', 'world')
-            ->passes(), );
+        static::assertTrue($validator->contains('string', 'world')
+            ->validated(), );
 
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereContains('string', 'WORLD', false)
-            ->passes(), );
+        static::assertTrue($validator->contains('string', 'WORLD', false)
+            ->validated(), );
 
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereContains('string', 'missing')
-            ->passes(), );
+        static::assertFalse($validator->contains('string', 'missing')
+            ->validated(), );
 
         $json      = json_encode([
             'string' => 123,
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereContains('string', 'world')
-            ->passes(), );
+        static::assertFalse($validator->contains('string', 'world')
+            ->validated(), );
     }
 
     /**
      * @throws JsonException
      */
-    public function testWhereEach(): void {
+    public function testPassesEach(): void {
         $json      = json_encode([
             'array' => [
                 1,
@@ -1184,10 +1179,10 @@ class JsonValidatorTest extends TestCase {
             ],
         ], flags: JSON_THROW_ON_ERROR, );
         $validator = Validator::validator($json);
-        $result    = $validator->whereEach('array', function ($item) {
+        $result    = $validator->passesEach('array', function ($item) {
             return $item > 0 ? true : 'Must be positive';
         })
-            ->passes();
+            ->validated();
         static::assertTrue($result);
 
         $json      = json_encode([
@@ -1198,41 +1193,41 @@ class JsonValidatorTest extends TestCase {
             ],
         ], flags: JSON_THROW_ON_ERROR, );
         $validator = Validator::validator($json);
-        $result    = $validator->whereEach('array', function ($item) {
+        $result    = $validator->passesEach('array', function ($item) {
             return $item > 0 ? true : 'Must be positive';
         })
-            ->passes();
+            ->validated();
         static::assertFalse($result);
-        static::assertArrayHasKey('array.1', $validator->errors());
+        static::assertArrayHasKey('array.1', $validator->getErrors());
 
         $json      = json_encode([
             'array' => 'string',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        $result    = $validator->whereEach('array', function () {
+        $result    = $validator->passesEach('array', function () {
             return true;
         })
-            ->passes();
+            ->validated();
         static::assertFalse($result);
     }
 
     /**
      * @throws JsonException
      */
-    public function testWhereNotEmpty(): void {
+    public function testIsNotEmpty(): void {
         $json      = json_encode([
             'string' => 'hello',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereNotEmpty('string')
-            ->passes(), );
+        static::assertTrue($validator->isNotEmpty('string')
+            ->validated(), );
 
         $json      = json_encode([
             'string' => '',
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereNotEmpty('string')
-            ->passes(), );
+        static::assertFalse($validator->isNotEmpty('string')
+            ->validated(), );
 
         $json      = json_encode([
             'array' => [
@@ -1242,21 +1237,21 @@ class JsonValidatorTest extends TestCase {
             ],
         ], flags: JSON_THROW_ON_ERROR, );
         $validator = Validator::validator($json);
-        static::assertTrue($validator->whereNotEmpty('array')
-            ->passes(), );
+        static::assertTrue($validator->isNotEmpty('array')
+            ->validated(), );
 
         $json      = json_encode([
             'array' => [],
         ], flags: JSON_THROW_ON_ERROR);
         $validator = Validator::validator($json);
-        static::assertFalse($validator->whereNotEmpty('array')
-            ->passes(), );
+        static::assertFalse($validator->isNotEmpty('array')
+            ->validated(), );
     }
 
     /**
      * @throws JsonException
      */
-    public function testWhereSchema(): void {
+    public function testPassesSchema(): void {
         $jsonData           = json_encode([
             'name'    => 'John',
             'email'   => 'john@example.com',
@@ -1278,8 +1273,8 @@ class JsonValidatorTest extends TestCase {
         ];
 
         $validator          = Validator::validator($jsonData);
-        static::assertTrue($validator->whereSchema('', $schema)
-            ->passes(), );
+        static::assertTrue($validator->passesSchema('', $schema)
+            ->validated(), );
 
         $complexSchema      = [
             'name'    => [
@@ -1312,19 +1307,19 @@ class JsonValidatorTest extends TestCase {
         ];
 
         $validator          = Validator::validator($jsonData);
-        static::assertTrue($validator->whereSchema('', $complexSchema)
-            ->passes(), );
+        static::assertTrue($validator->passesSchema('', $complexSchema)
+            ->validated(), );
 
         $schemaWithCallback = [
             'name'  => 'string',
-            'email' => function ($validator, $key) {
-                $validator->whereEmail($key);
+            'email' => function (Validator $validator, string $key) {
+                $validator->isEmail($key);
             },
         ];
 
         $validator          = Validator::validator($jsonData);
-        static::assertTrue($validator->whereSchema('', $schemaWithCallback)
-            ->passes(), );
+        static::assertTrue($validator->passesSchema('', $schemaWithCallback)
+            ->validated(), );
 
         $jsonData           = json_encode([
             'name'  => 123,
@@ -1333,8 +1328,8 @@ class JsonValidatorTest extends TestCase {
         ], flags: JSON_THROW_ON_ERROR);
 
         $validator          = Validator::validator($jsonData);
-        static::assertFalse($validator->whereSchema('', $schema)
-            ->passes(), );
-        static::assertCount(3, $validator->errors());
+        static::assertFalse($validator->passesSchema('', $schema)
+            ->validated(), );
+        static::assertCount(3, $validator->getErrors());
     }
 }
