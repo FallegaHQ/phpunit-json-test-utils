@@ -133,8 +133,8 @@ class JsonAssertionsTest extends TestCase {
         $schema = [
             'id'         => 'integer',
             'name'       => 'string',
-            'email'      => function ($validator, $key) {
-                $validator->whereEmail($key);
+            'email'      => function (JsonValidator $validator, string $key) {
+                $validator->isEmail($key);
             },
             'active'     => 'boolean',
             'tags'       => [
@@ -144,8 +144,8 @@ class JsonAssertionsTest extends TestCase {
             'profile'    => [
                 'age'     => 'integer',
                 'city'    => 'string',
-                'website' => function ($validator, $key) {
-                    $validator->whereUrl($key);
+                'website' => function (JsonValidator $validator, string $key) {
+                    $validator->isURL($key);
                 },
             ],
             'created_at' => [

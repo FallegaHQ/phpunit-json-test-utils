@@ -180,21 +180,21 @@ class AdvancedExamples extends TestCase {
 
         // First level validation
         $validator->has('settings');
-        $validator->whereType('settings', 'array');
+        $validator->isType('settings', 'array');
 
         // Validate notification settings
         $validator->has('settings.notifications');
-        $validator->whereType('settings.notifications.email', 'boolean');
-        $validator->whereType('settings.notifications.push', 'boolean');
-        $validator->whereType('settings.notifications.sms', 'boolean');
+        $validator->isType('settings.notifications.email', 'boolean');
+        $validator->isType('settings.notifications.push', 'boolean');
+        $validator->isType('settings.notifications.sms', 'boolean');
 
         // Validate privacy settings
         $validator->has('settings.privacy');
-        $validator->whereType('settings.privacy.share_data', 'boolean');
-        $validator->whereType('settings.privacy.public_profile', 'boolean');
+        $validator->isType('settings.privacy.share_data', 'boolean');
+        $validator->isType('settings.privacy.public_profile', 'boolean');
 
         // Advanced: custom logic check across multiple values
-        $validator->whereIs('settings', function ($settings) {
+        $validator->passes('settings', function ($settings) {
             // Example: at least one notification type must be enabled
             $notifications = $settings['notifications'] ?? [];
             $hasOneEnabled = false;
@@ -209,6 +209,6 @@ class AdvancedExamples extends TestCase {
             return $hasOneEnabled ? true : 'At least one notification must be enabled';
         });
 
-        self::assertTrue($validator->passes(), 'Validation failed: '.json_encode($validator->errors(), JSON_THROW_ON_ERROR));
+        self::assertTrue($validator->validated(), 'Validation failed: '.json_encode($validator->getErrors(), JSON_THROW_ON_ERROR));
     }
 }
