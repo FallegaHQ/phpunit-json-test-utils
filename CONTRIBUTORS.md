@@ -12,6 +12,7 @@ This is the list of individuals who have contributed to the project. If you've c
 
 <!-- Please add your name in alphabetical order -->
 
+- [Yassine Selmi](https://github.com/selmiyassine)
 - [Your name could be here!]
 
 ## How to Contribute

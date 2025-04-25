@@ -348,6 +348,7 @@ The MIT License (MIT). Please see [License File](LICENSE) for more information.
 ## Credits
 
 - [Fallega HQ](https://github.com/fallegahq)
+- [Yassine Selmi](https://github.com/selmiyassine)
 - [All Contributors](CONTRIBUTORS.md)
 
 ## Made with 💕
