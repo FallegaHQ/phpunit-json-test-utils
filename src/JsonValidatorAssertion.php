@@ -3,6 +3,7 @@
 /**
  * Made with love.
  */
+declare(strict_types = 1);
 namespace FallegaHQ\JsonTestUtils;
 
 use PHPUnit\Framework\Assert;
